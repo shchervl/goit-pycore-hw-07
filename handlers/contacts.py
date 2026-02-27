@@ -1,19 +1,17 @@
 from colorama import Style
 from tabulate import tabulate
 from models.commands import command
-from models.errors import UsageError
 from models.address_book import Record
 from config import (
     IDENT, BOT_COLOR, BOT_ERROR_COLOR,
-    ERR_NAME_AND_PHONE, ERR_NAME_ONLY,
+    ERR_NAME_AND_PHONE, ERR_NAME_AND_PHONES, ERR_NAME_ONLY,
 )
-from handlers.utils import get_record_or_raise
+from handlers.utils import get_record_or_raise, require_args
 
 
 @command("add", usage="add <name> <phone> - add a contact with phone.")
 def add_contact(args, book):
-    if len(args) != 2:
-        raise UsageError(ERR_NAME_AND_PHONE)
+    require_args(args, 2, ERR_NAME_AND_PHONE)
     name, phone = args
     username = name.capitalize()
     record = book.find(username)
@@ -26,20 +24,18 @@ def add_contact(args, book):
     return f"{IDENT}{BOT_COLOR}Phone added to existing contact.{Style.RESET_ALL}"
 
 
-@command("change", usage="change <name> <phone> - update a contact's phone.")
+@command("change", usage="change <name> <old phone> <new phone> - change a contact's phone.")
 def update_contact(args, book):
-    if len(args) != 2:
-        raise UsageError(ERR_NAME_AND_PHONE)
-    name, phone = args
+    require_args(args, 3, ERR_NAME_AND_PHONES)
+    name, old_phone, new_phone = args
     username, record = get_record_or_raise(book, name)
-    record.set_phone(phone)
+    record.edit_phone(old_phone, new_phone)
     return f"{IDENT}{BOT_COLOR}Contact updated.{Style.RESET_ALL}"
 
 
 @command("phone", usage="phone <name> - get the phone of a contact.")
 def get_users_phone(args, book):
-    if not args:
-        raise UsageError(ERR_NAME_ONLY)
+    require_args(args, 1, ERR_NAME_ONLY)
     username, record = get_record_or_raise(book, args[0])
     return BOT_COLOR + tabulate(
         [(username, "\n".join(p.value for p in record.phones))],

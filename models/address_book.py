@@ -68,8 +68,9 @@ class Record:
 
     def remove_phone(self, phone):
         phone_obj = self.find_phone(phone)
-        if phone_obj:
-            self.phones.remove(phone_obj)
+        if phone_obj is None:
+            raise ValueError(f"Phone {phone} not found in record")
+        self.phones.remove(phone_obj)
 
     def edit_phone(self, old_phone, new_phone):
         phone_obj = self.find_phone(old_phone)

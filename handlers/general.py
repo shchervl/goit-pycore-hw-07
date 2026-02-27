@@ -13,4 +13,4 @@ def hello_cmd(args, book):
 def help_cmd(args, book):
     rows = [(c.name, c.usage) for c in _COMMANDS.values() if c.usage]
     if rows:
-        print(BOT_COLOR + tabulate(rows, headers=["Command", "Usage"], tablefmt="rounded_grid") + Style.RESET_ALL)
+        return BOT_COLOR + tabulate(rows, headers=["Command", "Usage"], tablefmt="rounded_grid") + Style.RESET_ALL

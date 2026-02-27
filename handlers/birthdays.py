@@ -1,18 +1,16 @@
 from colorama import Style
 from tabulate import tabulate
 from models.commands import command
-from models.errors import UsageError
 from config import (
     IDENT, BOT_COLOR, BOT_ERROR_COLOR,
     ERR_NAME_AND_BIRTHDAY, ERR_NAME_ONLY,
 )
-from handlers.utils import get_record_or_raise
+from handlers.utils import get_record_or_raise, require_args
 
 
 @command("add-birthday", usage="add-birthday <name> <DD.MM.YYYY> – add a birthday to a contact.")
 def add_birthday(args, book):
-    if len(args) != 2:
-        raise UsageError(ERR_NAME_AND_BIRTHDAY)
+    require_args(args, 2, ERR_NAME_AND_BIRTHDAY)
     name, birthday_str = args
     username, record = get_record_or_raise(
         book, name,
@@ -24,8 +22,7 @@ def add_birthday(args, book):
 
 @command("show-birthday", usage="show-birthday <name> – show a contact's birthday.")
 def show_birthday(args, book):
-    if not args:
-        raise UsageError(ERR_NAME_ONLY)
+    require_args(args, 1, ERR_NAME_ONLY)
     username, record = get_record_or_raise(book, args[0])
     if record.birthday is None:
         return f"{IDENT}{BOT_COLOR}{username} has no birthday set.{Style.RESET_ALL}"

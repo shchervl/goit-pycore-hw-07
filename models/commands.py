@@ -17,7 +17,7 @@ class Command:
             return self._handler(args, book)
         except (ValueError, KeyError, IndexError) as e:
             hint = (
-                f"\n{Fore.LIGHTGREEN_EX}{Fore.YELLOW}'{self.usage}'{Style.RESET_ALL}"
+                f"\n{Fore.YELLOW}'{self.usage}'{Style.RESET_ALL}"
                 if isinstance(e, UsageError) and self.usage
                 else ""
             )
