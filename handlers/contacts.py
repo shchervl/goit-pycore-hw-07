@@ -1,12 +1,12 @@
 from colorama import Style
 from tabulate import tabulate
 from models.commands import command
-from models.address_book import Record
 from config import (
     IDENT, BOT_COLOR, BOT_ERROR_COLOR,
     ERR_NAME_AND_PHONE, ERR_NAME_AND_PHONES, ERR_NAME_ONLY,
 )
 from handlers.utils import get_record_or_raise, require_args
+from models.models import Record
 
 
 @command("add", usage="add <name> <phone> - add a contact with phone or add phone to the contact.")
