@@ -9,7 +9,7 @@ from config import (
 from handlers.utils import get_record_or_raise, require_args
 
 
-@command("add", usage="add <name> <phone> - add a contact with phone.")
+@command("add", usage="add <name> <phone> - add a contact with phone or add phone to the contact.")
 def add_contact(args, book):
     require_args(args, 2, ERR_NAME_AND_PHONE)
     name, phone = args
@@ -29,7 +29,9 @@ def update_contact(args, book):
     require_args(args, 3, ERR_NAME_AND_PHONES)
     name, old_phone, new_phone = args
     username, record = get_record_or_raise(book, name)
-    record.edit_phone(old_phone, new_phone)
+    merged = record.edit_phone(old_phone, new_phone)
+    if merged:
+        return f"{IDENT}{BOT_COLOR}{new_phone} already exists — {old_phone} removed.{Style.RESET_ALL}"
     return f"{IDENT}{BOT_COLOR}Contact updated.{Style.RESET_ALL}"
 
 

@@ -6,7 +6,6 @@ A command-line bot for managing contacts with phone numbers and birthdays.
 
 import readline  # noqa: F401 — enables arrow keys and history in input()
 from colorama import Style
-import handlers  # noqa: F401 — registers all @command handlers
 from handlers.utils import parse_input, print_error
 from models.commands import _COMMANDS
 from models.address_book import AddressBook

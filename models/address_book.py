@@ -34,6 +34,14 @@ class Phone(Field):
             raise ValueError(f"Phone number must be 10 digits, got: '{value}'")
         return value
 
+    def __eq__(self, other):
+        if isinstance(other, Phone):
+            return self.value == other.value
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self.value)
+
 
 class Birthday(Field):
     DATE_FORMAT = "%d.%m.%Y"
@@ -56,11 +64,13 @@ class Birthday(Field):
 class Record:
     def __init__(self, name):
         self.name = Name(name)
-        self.phones = []
+        self.phones = set()
         self.birthday = None
 
     def add_phone(self, phone):
-        self.phones.append(Phone(phone))
+        if self.find_phone(phone):
+            raise ValueError(f"Phone {phone} already exists for this contact.")
+        self.phones.add(Phone(phone))
 
     def set_phone(self, phone):
         self.phones.clear()
@@ -70,13 +80,19 @@ class Record:
         phone_obj = self.find_phone(phone)
         if phone_obj is None:
             raise ValueError(f"Phone {phone} not found in record")
-        self.phones.remove(phone_obj)
+        self.phones.discard(phone_obj)
 
     def edit_phone(self, old_phone, new_phone):
+        """Replace old_phone with new_phone. Returns True if new_phone already
+        existed (phones merged), False if it was a regular update."""
         phone_obj = self.find_phone(old_phone)
         if phone_obj is None:
             raise ValueError(f"Phone {old_phone} not found in record")
-        phone_obj.value = new_phone
+        merged = self.find_phone(new_phone) is not None
+        self.phones.discard(phone_obj)
+        if not merged:
+            self.phones.add(Phone(new_phone))
+        return merged
 
     def find_phone(self, phone):
         return next((p for p in self.phones if p.value == phone), None)
@@ -85,7 +101,7 @@ class Record:
         self.birthday = Birthday(birthday)
 
     def __str__(self):
-        phones = "; ".join(p.value for p in self.phones) or "—"
+        phones = "; ".join(sorted(p.value for p in self.phones)) or "—"
         birthday = f", birthday: {self.birthday}" if self.birthday else ""
         return f"Contact name: {self.name.value}, phones: {phones}{birthday}"
 
