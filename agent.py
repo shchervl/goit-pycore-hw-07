@@ -27,36 +27,27 @@ COMMANDS_USAGE: dict = {}
 
 
 def command(name: str, usage: str = None):
-    """Register a handler as a bot command and optionally record its usage hint.
+    """Register a handler as a bot command with built-in error handling."""
+    if usage:
+        COMMANDS_USAGE[name] = (
+            f"{HELP_MAIN_TEXT}{BOT_COLOR}'{usage}'{Style.RESET_ALL}"
+        )
 
-    Stamps func._cmd_name on the wrapped function so @input_error can locate
-    the hint without a separate lookup map.
-    """
     def decorator(func):
-        _COMMAND_REGISTRY[name] = func
-        if usage:
-            COMMANDS_USAGE[name] = (
-                f"{HELP_MAIN_TEXT}{BOT_COLOR}'{usage}'{Style.RESET_ALL}"
-            )
-        func._cmd_name = name
-        return func
+        @functools.wraps(func)
+        def inner(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except (ValueError, KeyError, IndexError) as e:
+                hint = (
+                    f"\n{COMMANDS_USAGE[name]}"
+                    if (isinstance(e, UsageError) and name in COMMANDS_USAGE)
+                    else ""
+                )
+                return f"{IDENT}{BOT_ERROR_COLOR}{e.args[0]}{Style.RESET_ALL}" + hint
+        _COMMAND_REGISTRY[name] = inner
+        return inner
     return decorator
-
-
-def input_error(func):
-    @functools.wraps(func)
-    def inner(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except (ValueError, KeyError, IndexError) as e:
-            cmd_name = getattr(inner, "_cmd_name", None)
-            hint = (
-                f"\n{COMMANDS_USAGE[cmd_name]}"
-                if (isinstance(e, UsageError) and cmd_name and cmd_name in COMMANDS_USAGE)
-                else ""
-            )
-            return f"{IDENT}{BOT_ERROR_COLOR}{e.args[0]}{Style.RESET_ALL}" + hint
-    return inner
 
 
 def parse_input(user_input):
@@ -75,7 +66,7 @@ def print_dict_as_list(dictionary: dict, headers: list):
     if not dictionary:
         print_error("There are no records yet.")
         return
-    print(tabulate(dictionary.items(), headers=headers, tablefmt="rounded_outline"))
+    print(tabulate(dictionary.items(), headers=headers, tablefmt="rounded_grid"))
 
 
 def get_record_or_raise(book, name: str, not_found_msg: str = None):
@@ -87,13 +78,11 @@ def get_record_or_raise(book, name: str, not_found_msg: str = None):
 
 
 @command("hello")
-@input_error
 def hello_cmd(args, book):
     return f"{IDENT}{BOT_COLOR}How can I help you?{Style.RESET_ALL}"
 
 
 @command("add", usage="add <name> <phone>  –  add a contact with phone.")
-@input_error
 def add_contact(args, book):
     if len(args) != 2:
         raise UsageError(ERR_NAME_AND_PHONE)
@@ -110,7 +99,6 @@ def add_contact(args, book):
 
 
 @command("change", usage="change <name> <phone>  –  update a contact's phone.")
-@input_error
 def update_contact(args, book):
     if len(args) != 2:
         raise UsageError(ERR_NAME_AND_PHONE)
@@ -121,36 +109,33 @@ def update_contact(args, book):
 
 
 @command("phone", usage="phone <name>  –  get the phone of a contact.")
-@input_error
 def get_users_phone(args, book):
     if not args:
         raise UsageError(ERR_NAME_ONLY)
     username, record = get_record_or_raise(book, args[0])
     return BOT_COLOR + tabulate(
-        [(username, "; ".join(p.value for p in record.phones))],
+        [(username, "\n".join(p.value for p in record.phones))],
         headers=["Name", "Phone(s)"],
-        tablefmt="rounded_outline",
+        tablefmt="rounded_grid",
     ) + Style.RESET_ALL
 
 
 @command("all", usage="all  –  list all contacts.")
-@input_error
 def all_contacts(args, book):
     if not book.data:
         return f"{IDENT}{BOT_ERROR_COLOR}No contacts yet.{Style.RESET_ALL}"
     data = [
         (
             r.name.value,
-            "; ".join(p.value for p in r.phones) or "—",
+            "\n".join(p.value for p in r.phones) or "—",
             str(r.birthday) if r.birthday else "—",
         )
         for r in book.data.values()
     ]
-    return BOT_COLOR + tabulate(data, headers=["Name", "Phone(s)", "Birthday"], tablefmt="rounded_outline") + Style.RESET_ALL
+    return BOT_COLOR + tabulate(data, headers=["Name", "Phone(s)", "Birthday"], tablefmt="rounded_grid") + Style.RESET_ALL
 
 
 @command("add-birthday", usage="add-birthday <name> <DD.MM.YYYY>  –  add a birthday to a contact.")
-@input_error
 def add_birthday(args, book):
     if len(args) != 2:
         raise UsageError(ERR_NAME_AND_BIRTHDAY)
@@ -164,7 +149,6 @@ def add_birthday(args, book):
 
 
 @command("show-birthday", usage="show-birthday <name>  –  show a contact's birthday.")
-@input_error
 def show_birthday(args, book):
     if not args:
         raise UsageError(ERR_NAME_ONLY)
@@ -175,17 +159,15 @@ def show_birthday(args, book):
 
 
 @command("birthdays", usage="birthdays  –  show contacts with birthdays in the next week.")
-@input_error
 def birthdays_cmd(args, book):
     upcoming = book.get_upcoming_birthdays()
     if not upcoming:
         return f"{IDENT}{BOT_COLOR}No birthdays in the next week.{Style.RESET_ALL}"
     data = [(u["name"], u["birthday"], u["congratulation_date"]) for u in upcoming]
-    return BOT_COLOR + tabulate(data, headers=["Name", "Birthday", "Congratulate on"], tablefmt="rounded_outline") + Style.RESET_ALL
+    return BOT_COLOR + tabulate(data, headers=["Name", "Birthday", "Congratulate on"], tablefmt="rounded_grid") + Style.RESET_ALL
 
 
 @command("help")
-@input_error
 def help_cmd(args, book):
     print_dict_as_list(COMMANDS_USAGE, ["Command", "Usage"])
 
