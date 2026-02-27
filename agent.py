@@ -7,6 +7,7 @@ A command-line bot for managing contacts with phone numbers and birthdays.
 import functools
 from colorama import Fore, Style
 from tabulate import tabulate
+from models.errors import UsageError
 from models.models import AddressBook, Record, get_upcoming_birthdays
 
 IDENT = " "
@@ -17,10 +18,6 @@ HELP_MAIN_TEXT = Fore.LIGHTGREEN_EX
 ERR_NAME_AND_PHONE = "Give me name and phone please."
 ERR_NAME_AND_BIRTHDAY = "Give me name and birthday please."
 ERR_NAME_ONLY = "Give me a name please."
-
-
-class UsageError(ValueError):
-    """Raised when a command receives wrong number or type of arguments."""
 
 
 # Populated automatically by @command — no manual maintenance needed
@@ -128,11 +125,11 @@ def get_users_phone(args, book):
     if not args:
         raise UsageError(ERR_NAME_ONLY)
     username, record = get_record_or_raise(book, args[0])
-    return tabulate(
+    return BOT_COLOR + tabulate(
         [(username, "; ".join(p.value for p in record.phones))],
         headers=["Name", "Phone(s)"],
         tablefmt="rounded_outline",
-    )
+    ) + Style.RESET_ALL
 
 
 @command("all", usage="all  –  list all contacts.")
@@ -148,7 +145,7 @@ def all_contacts(args, book):
         )
         for r in book.data.values()
     ]
-    return tabulate(data, headers=["Name", "Phone(s)", "Birthday"], tablefmt="rounded_outline")
+    return BOT_COLOR + tabulate(data, headers=["Name", "Phone(s)", "Birthday"], tablefmt="rounded_outline") + Style.RESET_ALL
 
 
 @command("add-birthday", usage="add-birthday <name> <DD.MM.YYYY>  –  add a birthday to a contact.")
@@ -183,7 +180,7 @@ def birthdays_cmd(args, book):
     if not upcoming:
         return f"{IDENT}{BOT_COLOR}No birthdays in the next week.{Style.RESET_ALL}"
     data = [(u["name"], u["birthday"], u["congratulation_date"]) for u in upcoming]
-    return tabulate(data, headers=["Name", "Birthday", "Congratulate on"], tablefmt="rounded_outline")
+    return BOT_COLOR + tabulate(data, headers=["Name", "Birthday", "Congratulate on"], tablefmt="rounded_outline") + Style.RESET_ALL
 
 
 @command("help")
@@ -196,19 +193,22 @@ def main():
     book = AddressBook()
     print(f"{BOT_COLOR}Welcome to the assistant bot!{Style.RESET_ALL}")
 
-    while True:
-        user_input = input("Enter a command: ").strip()
-        cmd, args = parse_input(user_input)
+    try:
+        while True:
+            user_input = input("Enter a command: ").strip()
+            cmd, args = parse_input(user_input)
 
-        if cmd in ["close", "exit"]:
-            print(f"{BOT_COLOR}Good bye!{Style.RESET_ALL}")
-            break
-        elif cmd in _COMMAND_REGISTRY:
-            result = _COMMAND_REGISTRY[cmd](args, book)
-            if result:
-                print(result)
-        elif cmd:
-            print_error("Invalid command. Type 'help' to see available commands.")
+            if cmd in ["close", "exit"]:
+                print(f"{BOT_COLOR}Good bye!{Style.RESET_ALL}")
+                break
+            elif cmd in _COMMAND_REGISTRY:
+                result = _COMMAND_REGISTRY[cmd](args, book)
+                if result:
+                    print(result)
+            elif cmd:
+                print_error("Invalid command. Type 'help' to see available commands.")
+    except KeyboardInterrupt:
+        print(f"\n{BOT_COLOR}Good bye!{Style.RESET_ALL}")
 
 
 if __name__ == "__main__":

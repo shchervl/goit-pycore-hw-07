@@ -53,8 +53,6 @@ class Birthday(Field):
         return self._value.strftime(Birthday.DATE_FORMAT)
 
 
-
-
 class Record:
     def __init__(self, name):
         self.name = Name(name)
@@ -134,9 +132,13 @@ def get_upcoming_birthdays(book):
                 birthday_this_year += datetime.timedelta(days=2)
             elif weekday == 6:
                 birthday_this_year += datetime.timedelta(days=1)
-            upcoming.append({
-                "name": record.name.value,
-                "birthday": birthday_str,
-                "congratulation_date": birthday_this_year.strftime(Birthday.DATE_FORMAT),
-            })
+            upcoming.append(
+                {
+                    "name": record.name.value,
+                    "birthday": birthday_str,
+                    "congratulation_date": birthday_this_year.strftime(
+                        Birthday.DATE_FORMAT
+                    ),
+                }
+            )
     return upcoming
