@@ -100,45 +100,44 @@ class AddressBook(UserDict):
         if name in self.data:
             del self.data[name]
 
+    def get_upcoming_birthdays(self):
+        today = datetime.date.today()
+        upcoming = []
+        for record in self.data.values():
+            if record.birthday is None:
+                continue
+            birthday = record.birthday.value
+            birthday_this_year = self._birthday_in_year(birthday, today.year)
+
+            if birthday_this_year < today:
+                birthday_this_year = self._birthday_in_year(birthday, today.year + 1)
+
+            days_until = (birthday_this_year - today).days
+            if 0 <= days_until <= 6:
+                birthday_str = birthday_this_year.strftime(Birthday.DATE_FORMAT)
+                weekday = birthday_this_year.weekday()
+                if weekday == 5:
+                    birthday_this_year += datetime.timedelta(days=2)
+                elif weekday == 6:
+                    birthday_this_year += datetime.timedelta(days=1)
+                upcoming.append(
+                    {
+                        "name": record.name.value,
+                        "birthday": birthday_str,
+                        "congratulation_date": birthday_this_year.strftime(
+                            Birthday.DATE_FORMAT
+                        ),
+                    }
+                )
+        return upcoming
+
+    @staticmethod
+    def _birthday_in_year(birthday: datetime.date, year: int) -> datetime.date:
+        """Return birthday adjusted to the given year. Feb 29 → Mar 1 in non-leap years."""
+        try:
+            return birthday.replace(year=year)
+        except ValueError:
+            return datetime.date(year, 3, 1)
+
     def __str__(self):
         return "\n".join(str(record) for record in self.data.values())
-
-
-def _birthday_in_year(birthday: datetime.date, year: int) -> datetime.date:
-    """Return birthday adjusted to the given year. Feb 29 → Mar 1 in non-leap years."""
-    try:
-        return birthday.replace(year=year)
-    except ValueError:
-        return datetime.date(year, 3, 1)
-
-
-def get_upcoming_birthdays(book):
-    today = datetime.date.today()
-    upcoming = []
-    for record in book.data.values():
-        if record.birthday is None:
-            continue
-        birthday = record.birthday.value
-        birthday_this_year = _birthday_in_year(birthday, today.year)
-
-        if birthday_this_year < today:
-            birthday_this_year = _birthday_in_year(birthday, today.year + 1)
-
-        days_until = (birthday_this_year - today).days
-        if 0 <= days_until <= 6:
-            birthday_str = birthday_this_year.strftime(Birthday.DATE_FORMAT)
-            weekday = birthday_this_year.weekday()
-            if weekday == 5:
-                birthday_this_year += datetime.timedelta(days=2)
-            elif weekday == 6:
-                birthday_this_year += datetime.timedelta(days=1)
-            upcoming.append(
-                {
-                    "name": record.name.value,
-                    "birthday": birthday_str,
-                    "congratulation_date": birthday_this_year.strftime(
-                        Birthday.DATE_FORMAT
-                    ),
-                }
-            )
-    return upcoming

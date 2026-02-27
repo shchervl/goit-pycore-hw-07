@@ -5,10 +5,11 @@ A command-line bot for managing contacts with phone numbers and birthdays.
 """
 
 import functools
+import readline  # enables arrow keys and history in input()
 from colorama import Fore, Style
 from tabulate import tabulate
 from models.errors import UsageError
-from models.models import AddressBook, Record, get_upcoming_birthdays
+from models.models import AddressBook, Record
 
 IDENT = " "
 BOT_COLOR = Fore.YELLOW
@@ -176,7 +177,7 @@ def show_birthday(args, book):
 @command("birthdays", usage="birthdays  –  show contacts with birthdays in the next week.")
 @input_error
 def birthdays_cmd(args, book):
-    upcoming = get_upcoming_birthdays(book)
+    upcoming = book.get_upcoming_birthdays()
     if not upcoming:
         return f"{IDENT}{BOT_COLOR}No birthdays in the next week.{Style.RESET_ALL}"
     data = [(u["name"], u["birthday"], u["congratulation_date"]) for u in upcoming]
