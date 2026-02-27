@@ -5,7 +5,7 @@ A command-line bot for managing contacts with phone numbers and birthdays.
 """
 
 import functools
-import readline  # enables arrow keys and history in input()
+import readline  #noqa: F401 — enables arrow keys and history in input()
 from colorama import Fore, Style
 from tabulate import tabulate
 from models.errors import UsageError

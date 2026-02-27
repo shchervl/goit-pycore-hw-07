@@ -114,7 +114,7 @@ class AddressBook(UserDict):
 
             days_until = (birthday_this_year - today).days
             if 0 <= days_until <= 6:
-                birthday_str = birthday_this_year.strftime(Birthday.DATE_FORMAT)
+                birthday_str = birthday.strftime(Birthday.DATE_FORMAT)
                 weekday = birthday_this_year.weekday()
                 if weekday == 5:
                     birthday_this_year += datetime.timedelta(days=2)
