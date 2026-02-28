@@ -1,9 +1,6 @@
 from colorama import Fore, Style
 from models.errors import UsageError
 
-# Populated automatically by @command — no manual maintenance needed
-_COMMANDS: dict[str, "Command"] = {}
-
 
 class Command:
     """A registered bot command that wraps a handler with error handling."""
@@ -25,20 +22,37 @@ class Command:
             return f" {Fore.RED}{e.args[0]}{Style.RESET_ALL}" + hint
 
 
-def command(name: str, usage: str = None):
-    """Register a handler as a bot command.
+class CommandRegistry:
+    """Holds all registered bot commands and exposes a @command decorator."""
 
-    Registration happens at import time — the moment the module containing
-    the decorated function is imported, the command is added to _COMMANDS.
-    For example, importing handlers.contacts immediately registers "add",
-    "change", "phone", and "all" before any user input is processed.
+    def __init__(self):
+        self._commands: dict[str, Command] = {}
 
-    To add a new command, create a handler with @command(...) and import
-    its module in handlers/__init__.py.
-    """
+    def command(self, name: str, usage: str = None):
+        """Decorator that registers a handler function as a named bot command.
 
-    def decorator(func):
-        _COMMANDS[name] = Command(name, func, usage)
-        return func
+        Registration happens at import time — the moment the module containing
+        the decorated function is imported, the command is added to the registry.
+        For example, importing handlers.contacts immediately registers "add",
+        "change", "phone", and "all" before any user input is processed.
 
-    return decorator
+        To add a new command, create a handler with @command(...) and import
+        its module in handlers/__init__.py.
+        """
+        def decorator(func):
+            self._commands[name] = Command(name, func, usage)
+            return func
+        return decorator
+
+    def __contains__(self, name: str) -> bool:
+        return name in self._commands
+
+    def __getitem__(self, name: str) -> Command:
+        return self._commands[name]
+
+    def values(self):
+        return self._commands.values()
+
+
+registry = CommandRegistry()
+command = registry.command  # handlers import this name unchanged

@@ -6,7 +6,7 @@ import pytest
 
 import handlers  # noqa: F401 — registers all @command decorators before _COMMANDS is used
 from handlers.birthdays import add_birthday, show_birthday, birthdays_cmd
-from models.commands import _COMMANDS
+from models.commands import registry
 from models.errors import UsageError
 from models.models import AddressBook, Record
 from tests.helpers import birthday_n_days_from_now, days_until_next
@@ -113,7 +113,15 @@ class TestBirthdaysCmd:
         result = birthdays_cmd([], book)
         assert "Alice" in result
         assert bday in result                          # birthday column
-        assert datetime.date.today().strftime("%d.%m.%Y") in result  # congratulation date
+        today = datetime.date.today()
+        wd = today.weekday()
+        if wd == 5:                                    # Saturday → Monday
+            expected_congrat = today + datetime.timedelta(days=2)
+        elif wd == 6:                                  # Sunday → Monday
+            expected_congrat = today + datetime.timedelta(days=1)
+        else:
+            expected_congrat = today
+        assert expected_congrat.strftime("%d.%m.%Y") in result
 
     def test_contact_with_birthday_in_6_days_is_shown(self, book):
         r = Record("Alice")
@@ -161,39 +169,39 @@ class TestBirthdaysCmd:
 
 
 # ─── Error messages returned by the Command wrapper ───────────────────────────
-# Calls via _COMMANDS["name"](args, book) — tests what the user actually sees.
+# Calls via registry["name"](args, book) — tests what the user actually sees.
 
 class TestBirthdayCommandErrorMessages:
     def test_add_birthday_no_args_returns_usage_message(self, book):
-        result = _COMMANDS["add-birthday"]([], book)
+        result = registry["add-birthday"]([], book)
         assert "Give me name and birthday please." in result
 
     def test_add_birthday_no_args_includes_usage_hint(self, book):
-        result = _COMMANDS["add-birthday"]([], book)
+        result = registry["add-birthday"]([], book)
         assert "add-birthday" in result  # usage hint appended for UsageError
 
     def test_add_birthday_unknown_contact_returns_not_found_message(self, book):
-        result = _COMMANDS["add-birthday"](["Nobody", "01.01.1990"], book)
+        result = registry["add-birthday"](["Nobody", "01.01.1990"], book)
         assert "not found" in result
         assert "Add the contact first" in result
 
     def test_add_birthday_invalid_format_returns_format_hint(self, book_with_alice):
-        result = _COMMANDS["add-birthday"](["Alice", "1990-01-01"], book_with_alice)
+        result = registry["add-birthday"](["Alice", "1990-01-01"], book_with_alice)
         assert "DD.MM.YYYY" in result
 
     def test_add_birthday_future_date_returns_future_message(self, book_with_alice):
         tomorrow = (datetime.date.today() + datetime.timedelta(days=1)).strftime("%d.%m.%Y")
-        result = _COMMANDS["add-birthday"](["Alice", tomorrow], book_with_alice)
+        result = registry["add-birthday"](["Alice", tomorrow], book_with_alice)
         assert "future" in result
 
     def test_show_birthday_no_args_returns_usage_message(self, book):
-        result = _COMMANDS["show-birthday"]([], book)
+        result = registry["show-birthday"]([], book)
         assert "Give me a name please." in result
 
     def test_show_birthday_no_args_includes_usage_hint(self, book):
-        result = _COMMANDS["show-birthday"]([], book)
+        result = registry["show-birthday"]([], book)
         assert "show-birthday" in result  # usage hint appended for UsageError
 
     def test_show_birthday_unknown_contact_returns_not_found_message(self, book):
-        result = _COMMANDS["show-birthday"](["nobody"], book)
+        result = registry["show-birthday"](["nobody"], book)
         assert "doesn't exist" in result

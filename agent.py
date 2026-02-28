@@ -7,7 +7,7 @@ A command-line bot for managing contacts with phone numbers and birthdays.
 import handlers  # noqa: F401 — imported to registers all @command handlers
 import readline  # noqa: F401 — enables arrow keys and history in input()
 from colorama import Style
-from models.commands import _COMMANDS
+from models.commands import registry
 from config import IDENT, BOT_COLOR, BOT_ERROR_COLOR
 from models.models import AddressBook
 
@@ -32,8 +32,8 @@ def main():
             if cmd in ["close", "exit"]:
                 print(f"{BOT_COLOR}Good bye!{Style.RESET_ALL}")
                 break
-            elif cmd in _COMMANDS:
-                result = _COMMANDS[cmd](args, book)
+            elif cmd in registry:
+                result = registry[cmd](args, book)
                 if result:
                     print(result)
             elif cmd:

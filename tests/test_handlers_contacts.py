@@ -4,7 +4,7 @@ import pytest
 
 import handlers  # noqa: F401 — registers all @command decorators before _COMMANDS is used
 from handlers.contacts import add_contact, update_contact, get_users_phone, all_contacts
-from models.commands import _COMMANDS
+from models.commands import registry
 from models.errors import UsageError
 from models.models import Record
 
@@ -160,49 +160,49 @@ class TestAllContacts:
 
 
 # ─── Error messages returned by the Command wrapper ───────────────────────────
-# Calls via _COMMANDS["name"](args, book) — tests what the user actually sees.
+# Calls via registry["name"](args, book) — tests what the user actually sees.
 
 class TestContactCommandErrorMessages:
     def test_add_no_args_returns_usage_message(self, book):
-        result = _COMMANDS["add"]([], book)
+        result = registry["add"]([], book)
         assert "Give me name and phone please." in result
 
     def test_add_no_args_includes_usage_hint(self, book):
-        result = _COMMANDS["add"]([], book)
+        result = registry["add"]([], book)
         assert "add <name> <phone>" in result  # usage hint appended for UsageError
 
     def test_add_invalid_phone_returns_digit_count_message(self, book):
-        result = _COMMANDS["add"](["alice", "123"], book)
+        result = registry["add"](["alice", "123"], book)
         assert "10 digits" in result
 
     def test_add_duplicate_phone_returns_exists_message(self, book_with_alice):
-        result = _COMMANDS["add"](["alice", "1234567890"], book_with_alice)
+        result = registry["add"](["alice", "1234567890"], book_with_alice)
         assert "already exists" in result
 
     def test_change_no_args_returns_usage_message(self, book):
-        result = _COMMANDS["change"]([], book)
+        result = registry["change"]([], book)
         assert "Give me name, old phone and new phone please." in result
 
     def test_change_no_args_includes_usage_hint(self, book):
-        result = _COMMANDS["change"]([], book)
+        result = registry["change"]([], book)
         assert "change <name>" in result  # usage hint appended for UsageError
 
     def test_change_unknown_contact_returns_not_found_message(self, book):
-        result = _COMMANDS["change"](["nobody", "1234567890", "0987654321"], book)
+        result = registry["change"](["nobody", "1234567890", "0987654321"], book)
         assert "doesn't exist" in result
 
     def test_change_old_phone_not_found_returns_not_found_message(self, book_with_alice):
-        result = _COMMANDS["change"](["alice", "0000000000", "1111111111"], book_with_alice)
+        result = registry["change"](["alice", "0000000000", "1111111111"], book_with_alice)
         assert "not found" in result
 
     def test_phone_no_args_returns_usage_message(self, book):
-        result = _COMMANDS["phone"]([], book)
+        result = registry["phone"]([], book)
         assert "Give me a name please." in result
 
     def test_phone_no_args_includes_usage_hint(self, book):
-        result = _COMMANDS["phone"]([], book)
+        result = registry["phone"]([], book)
         assert "phone <name>" in result  # usage hint appended for UsageError
 
     def test_phone_unknown_contact_returns_not_found_message(self, book):
-        result = _COMMANDS["phone"](["nobody"], book)
+        result = registry["phone"](["nobody"], book)
         assert "doesn't exist" in result
